@@ -1,0 +1,86 @@
+---
+title: "Valence Shifters for Sentiment-An"
+output: html_document
+---
+### Sentiment analysis with sentimentR
+
+Loading required libraries
+```{r setup}
+if (!require(sentimentr)) {install.packages("sentimentr")} # ensure java is up to date!
+library(sentimentr)
+library(dplyr)
+library(ggplot2)   # for visualizing sentimt variation
+```
+
+
+```{r nokiaEg}
+nokia = readLines('swiggy.txt')
+
+review1 = nokia[1]   # try first review 
+sentiment_by(review1)  # get aggregate polarity for the whole review
+
+# get polarity by indiv sentence
+a0.df = review1 %>% 
+	get_sentences() %>% # inbuilt sentence-parsing
+	sentiment()    # sentiment for each sentence parsed
+a0.df
+
+# get aggreg polarity for the whole corpus
+system.time({ nokia_senti = sentiment_by(nokia) })  # 0.39 secs
+nokia_senti[1:15,]    # view first 15 rows
+
+```
+
+### Visualizing Sentiment over Doc length
+
+How might sentiment levels vary over the length of a document? Is there an upward trend? downward trend? No trend? How to know? HOw better in fact, than to visualize the same and see for ourselves?
+
+Am using ggplot2 below. Code is straightforward to follow.
+```{r}
+require(ggplot2)
+p <- ggplot(a0.df, aes(x = a0.df$sentence_id, y = a0.df$sentiment)) + 
+geom_smooth(col="blue", se=FALSE) + geom_hline(yintercept=0) + 
+geom_smooth(method="lm", formula=y~x, col="red", se=FALSE) 
+p
+```
+
+```{r}
+#Ref - https://cran.r-project.org/web/packages/syuzhet/vignettes/syuzhet-vignette.html
+#https://github.com/DevikaMishra-Dataturks/Twitter_Data_Analysis
+
+library(syuzhet)
+swiggy = readLines('swiggy.txt')
+sentiment <- get_nrc_sentiment((swiggy))
+sentiment_scores <- data.frame(colMeans(sentiment[,]))
+names(sentiment_scores) <- "Score"
+sentiment_scores <- cbind("sentiment" = rownames(sentiment_scores), sentiment_scores)
+rownames(sentiment_scores) <- NULL
+
+#plotting the sentiments with scores
+ggplot(data=sentiment_scores, aes(x=sentiment, y=Score)) +
+  geom_bar(aes(fill=sentiment), stat = "identity") +
+  theme(legend.position = "none")+
+  xlab("Sentiment Type") + ylab("Sentiment Score") + ggtitle("Sentiments of people tweeting to Swiggy handle")
+```
+
+```{r}
+zomato = readLines('zomato.txt')
+sentiment <- get_nrc_sentiment((zomato))
+sentiment_scores <- data.frame(colMeans(sentiment[,]))
+#sentiment_scores <- data.frame(colSums(sentiment[,]))
+names(sentiment_scores) <- "Score"
+sentiment_scores <- cbind("sentiment" = rownames(sentiment_scores), sentiment_scores)
+rownames(sentiment_scores) <- NULL
+
+#plotting the sentiments with scores
+ggplot(data=sentiment_scores, aes(x=sentiment, y=Score)) +
+  geom_bar(aes(fill=sentiment), stat = "identity") +
+  theme(legend.position = "none")+
+  xlab("Sentiment Type") + ylab("Sentiment Score") + ggtitle("Sentiments of people tweeting to Zomato handle")
+```
+
+Closing with that for now.
+
+Ciao
+
+Sudhir
