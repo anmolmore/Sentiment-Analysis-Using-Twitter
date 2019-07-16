@@ -62,7 +62,7 @@ rownames(sentiment_scores) <- NULL
 ggplot(data=sentiment_scores, aes(x=sentiment, y=Score)) +
   geom_bar(aes(fill=sentiment), stat = "identity") +
   theme(legend.position = "none")+
-  ylim(0,1) +
+  ylim(0,1.2) +
   xlab("Sentiment Type") + ylab("Sentiment Score") + ggtitle("Sentiments of people tweeting to Swiggy handle")
 ```
 
@@ -79,7 +79,7 @@ rownames(sentiment_scores) <- NULL
 ggplot(data=sentiment_scores, aes(x=sentiment, y=Score)) +
   geom_bar(aes(fill=sentiment), stat = "identity") +
   theme(legend.position = "none")+
-  ylim(0,1) +
+  ylim(0,1.2) +
   xlab("Sentiment Type") + ylab("Sentiment Score") + ggtitle("Sentiments of people tweeting to Zomato handle")
 ```
 
