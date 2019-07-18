@@ -120,54 +120,51 @@ p = ggplot(test, aes(x = rownames(test), y = test[,])) +
 ```
 
 ```{r create cog}
- distill.cog = function(dtm, central.nodes=4, max.connexns = 5) {  # max no. of connections  
+max_center_nodes <- 4
+max_vertices <- 5
+distill.cog = function(dtm) {
+ dtm_matrix = as.matrix(dtm)  #convert dtm to matrix
+ adj.mat = t(dtm_matrix) %*% dtm_matrix   #Transpose the matrix
+ diag(adj.mat) = 0     #remove self word references from matrix
+ col_sum = order(apply(adj.mat, 2, sum), decreasing = T)  #order by sum
+ sum_matrix = as.matrix(adj.mat[col_sum[1:50], col_sum[1:50]])
+
+ a = colSums(sum_matrix) # get sum in vector
+ b = order(-a) #arrange in descending order
+  
+ row_col_matrix = sum_matrix[b, b]  #create matrix with rows and columns
+ diag(row_col_matrix) =  0
  
- dtm1 = as.matrix(dtm)  #convert dtm to matrix
- adj.mat = t(dtm1) %*% dtm1   #Transpose the matrix
- diag(adj.mat) = 0     # no self-references. So diag is 0.
- a0 = order(apply(adj.mat, 2, sum), decreasing = T)   # order cols by descending colSum
- mat1 = as.matrix(adj.mat[a0[1:50], a0[1:50]])
-
-  # now invoke network plotting lib igraph
-
-  a = colSums(mat1) # collect colsums into a vector obj a
-  b = order(-a)     # nice syntax for ordering vector in decr order  
-  
-  mat2 = mat1[b, b]     # order both rows and columns along vector b  
-  diag(mat2) =  0
-  
-  ## +++ go row by row and find top k adjacencies +++ ##
-
-  wc = NULL
-  
-  for (i1 in 1:central.nodes){ 
-    thresh1 = mat2[i1,][order(-mat2[i1, ])[max.connexns]]
-    mat2[i1, mat2[i1,] < thresh1] = 0   # neat. didn't need 2 use () in the subset here.
-    mat2[i1, mat2[i1,] > 0 ] = 1
-    word = names(mat2[i1, mat2[i1,] > 0])
-    mat2[(i1+1):nrow(mat2), match(word,colnames(mat2))] = 0
-    wc = c(wc, word)
-  } # i1 loop ends
-  
-  
-  mat3 = mat2[match(wc, colnames(mat2)), match(wc, colnames(mat2))]
-  ord = colnames(mat2)[which(!is.na(match(colnames(mat2), colnames(mat3))))]  # removed any NAs from the list
-  mat4 = mat3[match(ord, colnames(mat3)), match(ord, colnames(mat3))]
-  return (mat4)
+ word_count = NULL
+ for (i in 1:max_center_nodes) {
+  thresh1 = row_col_matrix[i,][order(-row_col_matrix[i, ])[max_vertices]]
+  row_col_matrix[i, row_col_matrix[i,] < thresh1] = 0 
+  row_col_matrix[i, row_col_matrix[i,] > 0 ] = 1
+  word = names(row_col_matrix[i, row_col_matrix[i,] > 0])
+  row_col_matrix[(i+1):nrow(row_col_matrix), match(word,colnames(row_col_matrix))] = 0
+  word_count = c(word_count, word)
 }
-  # building and plotting a network object
+ row_col_matrix1 = row_col_matrix[match(word_count, colnames(row_col_matrix)), match(word_count, colnames(row_col_matrix))]
+ order = colnames(row_col_matrix)[which(!is.na(match(colnames(row_col_matrix), colnames(row_col_matrix1))))]  #remove NA rows
+ row_col_matrix2 = row_col_matrix1[match(order, colnames(row_col_matrix1)), match(order, colnames(row_col_matrix1))]
+ return (row_col_matrix2)
+}
 
-mat4 <-  distill.cog(swiggy_dtm)
-graph <- graph.adjacency(mat4, mode = "undirected", weighted=T)    # Create Network object
-graph = simplify(graph) 
-V(graph)$color[1:central.nodes] = "green"
-V(graph)$color[5:length(V(graph))] = "pink"  #max number of central nodes
-graph = delete.vertices(graph, V(graph)[ degree(graph) == 0 ]) # delete singletons?
+dtm_plot <-  distill.cog(swiggy_dtm)
+graph <- graph.adjacency(dtm_plot, mode = "undirected", weighted=T) #Create Network object
+graph <- simplify(graph) 
+V(graph)$color[1:max_center_nodes] = "green" #central node color
+V(graph)$color[max_center_nodes+1:length(V(graph))] = "pink"  #vertex colors
+graph = delete.vertices(graph, V(graph)[ degree(graph) == 0 ]) #delete empty vertices
+plot(graph, layout = layout.kamada.kawai, main = "Swiggy COG")
   
-  plot(graph, 
-       layout = layout.kamada.kawai, 
-       main = "COG")
-  
+dtm_plot <-  distill.cog(zomato_dtm)
+graph <- graph.adjacency(dtm_plot, mode = "undirected", weighted=T) #Create Network object
+graph <- simplify(graph) 
+V(graph)$color[1:4] <- "green" #central node color
+V(graph)$color[5:length(V(graph))] <- "pink"  #vertex colors
+graph = delete.vertices(graph, V(graph)[ degree(graph) == 0 ]) #delete empty vertices
+plot(graph, layout = layout.kamada.kawai, main = "Zomato COG")
 
 ```
 

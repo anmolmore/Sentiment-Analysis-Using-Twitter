@@ -21,7 +21,7 @@ if (!require(matrixStats)) {install.packages("matrixStats")}
 
 
 ```{r}
-swiggy = readLines('swiggy.txt')
+swiggy = readLines('data/swiggy.txt')
 sentiment <- get_nrc_sentiment((swiggy))
 sentiment_scores <- data.frame(colMeans(sentiment[,]))
 names(sentiment_scores) <- "Score"
@@ -37,7 +37,7 @@ ggplot(data=sentiment_scores, aes(x=sentiment, y=Score)) +
 ```
 
 ```{r}
-zomato = readLines('zomato.txt')
+zomato = readLines('data/zomato.txt')
 sentiment <- get_nrc_sentiment((zomato))
 sentiment_scores <- data.frame(colMeans(sentiment[,]))
 #sentiment_scores <- data.frame(colSums(sentiment[,]))

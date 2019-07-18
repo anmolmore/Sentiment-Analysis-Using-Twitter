@@ -12,8 +12,8 @@ if (!require(dplyr)) {install.packages("dplyr")}
 read zomato and swiggy files
 
 ```{r read files}
-zomato <- readLines('zomato.txt')
-swiggy <- readLines("swiggy.txt")
+zomato <- readLines('data/zomato.txt')
+swiggy <- readLines("data/swiggy.txt")
 ```
 
 function to return bing sentiment words 
