@@ -1,0 +1,54 @@
+---
+title: "Sentiment Analysis"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+
+# Ref - https://cran.r-project.org/web/packages/syuzhet/vignettes/syuzhet-vignette.html
+
+# https://github.com/DevikaMishra-Dataturks/Twitter_Data_Analysis
+
+# https://hackernoon.com/text-processing-and-sentiment-analysis-of-twitter-data-22ff5e51e14c
+
+```{r imports}
+if (!require(syuzhet)) {install.packages("syuzhet")}
+if (!require(ggplot2)) {install.packages("ggplot2")}
+if (!require(matrixStats)) {install.packages("matrixStats")}
+```
+
+
+```{r}
+swiggy = readLines('swiggy.txt')
+sentiment <- get_nrc_sentiment((swiggy))
+sentiment_scores <- data.frame(colMeans(sentiment[,]))
+names(sentiment_scores) <- "Score"
+sentiment_scores <- cbind("sentiment" = rownames(sentiment_scores), sentiment_scores)
+rownames(sentiment_scores) <- NULL
+
+#plotting the sentiments with scores
+ggplot(data=sentiment_scores, aes(x=sentiment, y=Score)) +
+  geom_bar(aes(fill=sentiment), stat = "identity") +
+  theme(legend.position = "none")+
+  ylim(0,1.2) +
+  xlab("Sentiment Type") + ylab("Mean sentiment score") + ggtitle("Sentiments of people tweeting to Swiggy handle")
+```
+
+```{r}
+zomato = readLines('zomato.txt')
+sentiment <- get_nrc_sentiment((zomato))
+sentiment_scores <- data.frame(colMeans(sentiment[,]))
+#sentiment_scores <- data.frame(colSums(sentiment[,]))
+names(sentiment_scores) <- "Score"
+sentiment_scores <- cbind("sentiment" = rownames(sentiment_scores), sentiment_scores)
+rownames(sentiment_scores) <- NULL
+
+#plotting the sentiments with scores
+ggplot(data=sentiment_scores, aes(x=sentiment, y=Score)) +
+  geom_bar(aes(fill=sentiment), stat = "identity") +
+  theme(legend.position = "none")+
+  ylim(0,1.2) +
+  xlab("Sentiment Type") + ylab("Mean sentiment score") + ggtitle("Sentiments of people tweeting to Zomato handle")
+```

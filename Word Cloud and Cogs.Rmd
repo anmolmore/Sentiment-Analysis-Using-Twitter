@@ -1,0 +1,173 @@
+---
+title: "Word Cloud and Cogs"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Ref : Code chunks taken from tidytext class excercises
+
+```{r}
+if (!require(tidytext)) {install.packages("tidytext")}
+if (!require(tibble)) {install.packages("tibble")}
+if (!require(tidyverse)) {install.packages("tidyverse")}
+if (!require(wordcloud)) {install.packages("wordcloud")}
+if (!require(ggplot2)) {install.packages("ggplot2")}
+if (!require(igraph)) {install.packages("igraph")}
+```
+
+Read swiggy and zomato files
+
+```{r cars}
+swiggy <- readLines('data/swiggy.txt')
+zomato <- readLines('data/zomato.txt')
+```
+
+Build document term matrix
+
+```{r build dtm}
+build_dtm <- function(corpus) {
+  df = data_frame(text = corpus)  #create dataframe
+  df_tokens = df %>% 
+    mutate(doc = row_number()) %>% 
+    unnest_tokens(word, text) %>% 
+    anti_join(stop_words) %>% 
+    group_by(doc) %>% 
+    count(word, sort=TRUE)
+  
+  df_counts = df_tokens %>% rename(value = n)
+  dtm = df_counts %>% cast_sparse(doc, word, value)
+ 
+   # order rows and colms putting max mass on the top-left corner of the DTM
+  colsum = apply(dtm, 2, sum)    
+  col.order = order(colsum, decreasing=TRUE)
+  row.order = order(rownames(dtm) %>% as.numeric())
+  dtm1 = dtm[row.order, col.order]
+  return(dtm1)  
+}
+
+swiggy_dtm = build_dtm(swiggy)
+zomato_dtm = build_dtm(zomato)
+```
+
+Plot Word Clouds
+
+```{r word cloud}
+build_wordcloud <- function(dtm) {
+ if (ncol(dtm) > 20000) {
+   chunk = round(ncol(dtm)/100)
+   a = rep(chunk,99)
+   b = cumsum(a)
+   rm(a)
+   b = c(0,b,ncol(dtm))
+   
+   ss.col = c(NULL)
+   for (i in 1:(length(b)-1)) {
+     tempdtm = dtm[,(b[i]+1):(b[i+1])]
+     s = colSums(as.matrix(tempdtm))
+     ss.col = c(ss.col,s)
+    } # i loop ends
+
+   tsum = ss.col
+  }
+  else {
+    tsum = apply(dtm, 2, sum)
+  }
+
+ tsum = tsum[order(tsum, decreasing = T)]
+ return (tsum)
+}
+
+tsum <- build_wordcloud(swiggy_dtm)
+wordcloud(names(tsum), tsum,     # words, their freqs 
+          scale = c(3.5, 0.5),     # range of word sizes
+          5,                     # min.freq of words to consider
+          max.words = 150,       # max #words
+          colors = brewer.pal(8, "Dark2"))    # Plot results in a word cloud 
+          title(sub = "Swiggy Tweets Word Cloud")     # title for the wordcloud display
+
+```
+```{r plot barchart}
+plot.barchart <- function(dtm) {
+  a0 = apply(dtm, 2, sum)
+  a1 = order(a0, decreasing = TRUE)
+  tsum = a0[a1]
+  return (tsum)
+}
+ # plot barchart for top tokens
+ 
+  
+
+tsum <- plot.barchart(swiggy_dtm)
+test = as.data.frame(round(tsum[1:15],0))  #max words to plot
+p = ggplot(test, aes(x = rownames(test), y = test[,])) + 
+       geom_bar(stat = "identity", fill = "Brown") +
+       geom_text(aes(label = test[,]), vjust= -0.20) + 
+       theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ plot(p)
+ 
+ tsum <- plot.barchart(zomato_dtm)
+test = as.data.frame(round(tsum[1:15],0))  #max words to plot
+p = ggplot(test, aes(x = rownames(test), y = test[,])) + 
+       geom_bar(stat = "identity", fill = "Brown") +
+       geom_text(aes(label = test[,]), vjust= -0.20) + 
+       theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ plot(p)
+```
+
+```{r create cog}
+ distill.cog = function(dtm, central.nodes=4, max.connexns = 5) {  # max no. of connections  
+ 
+ dtm1 = as.matrix(dtm)  #convert dtm to matrix
+ adj.mat = t(dtm1) %*% dtm1   #Transpose the matrix
+ diag(adj.mat) = 0     # no self-references. So diag is 0.
+ a0 = order(apply(adj.mat, 2, sum), decreasing = T)   # order cols by descending colSum
+ mat1 = as.matrix(adj.mat[a0[1:50], a0[1:50]])
+
+  # now invoke network plotting lib igraph
+
+  a = colSums(mat1) # collect colsums into a vector obj a
+  b = order(-a)     # nice syntax for ordering vector in decr order  
+  
+  mat2 = mat1[b, b]     # order both rows and columns along vector b  
+  diag(mat2) =  0
+  
+  ## +++ go row by row and find top k adjacencies +++ ##
+
+  wc = NULL
+  
+  for (i1 in 1:central.nodes){ 
+    thresh1 = mat2[i1,][order(-mat2[i1, ])[max.connexns]]
+    mat2[i1, mat2[i1,] < thresh1] = 0   # neat. didn't need 2 use () in the subset here.
+    mat2[i1, mat2[i1,] > 0 ] = 1
+    word = names(mat2[i1, mat2[i1,] > 0])
+    mat2[(i1+1):nrow(mat2), match(word,colnames(mat2))] = 0
+    wc = c(wc, word)
+  } # i1 loop ends
+  
+  
+  mat3 = mat2[match(wc, colnames(mat2)), match(wc, colnames(mat2))]
+  ord = colnames(mat2)[which(!is.na(match(colnames(mat2), colnames(mat3))))]  # removed any NAs from the list
+  mat4 = mat3[match(ord, colnames(mat3)), match(ord, colnames(mat3))]
+  return (mat4)
+}
+  # building and plotting a network object
+
+mat4 <-  distill.cog(swiggy_dtm)
+graph <- graph.adjacency(mat4, mode = "undirected", weighted=T)    # Create Network object
+graph = simplify(graph) 
+V(graph)$color[1:central.nodes] = "green"
+V(graph)$color[5:length(V(graph))] = "pink"  #max number of central nodes
+graph = delete.vertices(graph, V(graph)[ degree(graph) == 0 ]) # delete singletons?
+  
+  plot(graph, 
+       layout = layout.kamada.kawai, 
+       main = "COG")
+  
+
+```
+

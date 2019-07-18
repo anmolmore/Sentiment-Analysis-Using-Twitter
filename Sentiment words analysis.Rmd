@@ -1,0 +1,67 @@
+---
+title: "Sentiment words analysis"
+output: word_document
+---
+
+```{r}
+if (!require(tidytext)) {install.packages("tidytext")}
+if (!require(ggplot2)) {install.packages("ggplot2")}
+if (!require(dplyr)) {install.packages("dplyr")}
+```
+
+read zomato and swiggy files
+
+```{r read files}
+zomato <- readLines('zomato.txt')
+swiggy <- readLines("swiggy.txt")
+```
+
+function to return bing sentiment words 
+
+```{r}
+get_positive_negative_word_counts <- function(corpus) {
+  df = data_frame(text = zomato)  #create dataframe from corpus
+  bing_sentiments = get_sentiments("bing")
+  
+  word_counts <- df %>%
+    unnest_tokens(word, text) %>%
+    inner_join(bing_sentiments) %>%
+    count(word, sentiment, sort = TRUE) %>%
+    ungroup()
+  
+  return (word_counts)
+}
+
+```
+
+bing sentiments add positive and negative scores
+Based on those score contribution 
+
+```{r}
+swiggy_word_counts <- get_positive_negative_word_counts(swiggy)
+swiggy_word_counts %>%
+  filter(n > 20) %>%
+  mutate(n = ifelse(sentiment == "negative", -n, n)) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  xlab("Words") +
+  ylab("Count of words") +
+  ggtitle("Words contributing towards Swiggy sentiment")
+```
+
+
+```{r}
+zomato_word_counts <- get_positive_negative_word_counts(zomato)
+zomato_word_counts %>%
+  filter(n > 20) %>%
+  mutate(n = ifelse(sentiment == "negative", -n, n)) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  xlab("Words") +
+  ylab("Count of words") +
+  ggtitle("Words contributing towards Zomato sentiment")
+```
