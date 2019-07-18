@@ -68,7 +68,7 @@ build_wordcloud <- function(dtm) {
      tempdtm = dtm[,(b[i]+1):(b[i+1])]
      s = colSums(as.matrix(tempdtm))
      ss.col = c(ss.col,s)
-    } # i loop ends
+    }
 
    tsum = ss.col
   }
@@ -81,12 +81,20 @@ build_wordcloud <- function(dtm) {
 }
 
 tsum <- build_wordcloud(swiggy_dtm)
-wordcloud(names(tsum), tsum,     # words, their freqs 
-          scale = c(3.5, 0.5),     # range of word sizes
+wordcloud(names(tsum), tsum,     #List of words and frequencies
+          scale = c(3.5, 0.5),   #define scale
           5,                     # min.freq of words to consider
-          max.words = 150,       # max #words
-          colors = brewer.pal(8, "Dark2"))    # Plot results in a word cloud 
-          title(sub = "Swiggy Tweets Word Cloud")     # title for the wordcloud display
+          max.words = 150,       # max no of words to consider in word cloud
+          colors = brewer.pal(8, "Dark2"))  
+          title(sub = "Swiggy Tweets Word Cloud")
+          
+tsum <- build_wordcloud(zomato_dtm)
+wordcloud(names(tsum), tsum,     #List of words and frequencies
+          scale = c(3.5, 0.5),   #define scale
+          5,                     # min.freq of words to consider
+          max.words = 150,       # max no of words to consider in word cloud
+          colors = brewer.pal(8, "Dark2"))  
+          title(sub = "Zomato Tweets Word Cloud")
 
 ```
 ```{r plot barchart}
@@ -106,17 +114,15 @@ p = ggplot(test, aes(x = rownames(test), y = test[,])) +
        geom_bar(stat = "identity", fill = "Brown") +
        geom_text(aes(label = test[,]), vjust= -0.20) + 
        theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
- plot(p)
+plot(p)
  
- tsum <- plot.barchart(zomato_dtm)
+tsum <- plot.barchart(zomato_dtm)
 test = as.data.frame(round(tsum[1:15],0))  #max words to plot
 p = ggplot(test, aes(x = rownames(test), y = test[,])) + 
        geom_bar(stat = "identity", fill = "Brown") +
        geom_text(aes(label = test[,]), vjust= -0.20) + 
        theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
- plot(p)
+plot(p)
 ```
 
 ```{r create cog}
