@@ -1,6 +1,8 @@
 ---
 title: "Word Cloud and Cogs"
-output: word_document
+output:
+  word_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -82,7 +84,7 @@ build_wordcloud <- function(dtm) {
 
 tsum <- build_wordcloud(swiggy_dtm)
 wordcloud(names(tsum), tsum,     #List of words and frequencies
-          scale = c(3.5, 0.5),   #define scale
+          scale = c(2.5, 0.5),   #define scale
           5,                     # min.freq of words to consider
           max.words = 150,       # max no of words to consider in word cloud
           colors = brewer.pal(8, "Dark2"))  
@@ -90,7 +92,7 @@ wordcloud(names(tsum), tsum,     #List of words and frequencies
           
 tsum <- build_wordcloud(zomato_dtm)
 wordcloud(names(tsum), tsum,     #List of words and frequencies
-          scale = c(3.5, 0.5),   #define scale
+          scale = c(2.2, 0.5),   #define scale
           5,                     # min.freq of words to consider
           max.words = 150,       # max no of words to consider in word cloud
           colors = brewer.pal(8, "Dark2"))  
@@ -105,24 +107,28 @@ plot.barchart <- function(dtm) {
   return (tsum)
 }
  # plot barchart for top tokens
- 
-  
-
 tsum <- plot.barchart(swiggy_dtm)
 test = as.data.frame(round(tsum[1:15],0))  #max words to plot
 p = ggplot(test, aes(x = rownames(test), y = test[,])) + 
-       geom_bar(stat = "identity", fill = "Brown") +
-       geom_text(aes(label = test[,]), vjust= -0.20) + 
-       theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  geom_bar(stat = "identity", fill = "Brown") +
+  geom_text(aes(label = test[,]), vjust= -0.20) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  xlab("Words") +
+  ylab("No of occurances") +
+  ggtitle("Top 15 words for Swiggy")
 plot(p)
- 
+
 tsum <- plot.barchart(zomato_dtm)
 test = as.data.frame(round(tsum[1:15],0))  #max words to plot
 p = ggplot(test, aes(x = rownames(test), y = test[,])) + 
-       geom_bar(stat = "identity", fill = "Brown") +
-       geom_text(aes(label = test[,]), vjust= -0.20) + 
-       theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  geom_bar(stat = "identity", fill = "Brown") +
+  geom_text(aes(label = test[,]), vjust= -0.20) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  xlab("Words") +
+  ylab("No of occurances") +
+  ggtitle("Top 15 words for Zomato")
 plot(p)
+
 ```
 
 ```{r create cog}
@@ -156,21 +162,24 @@ distill.cog = function(dtm) {
  return (row_col_matrix2)
 }
 
+#plot swiggy cogs
 dtm_plot <-  distill.cog(swiggy_dtm)
 graph <- graph.adjacency(dtm_plot, mode = "undirected", weighted=T) #Create Network object
 graph <- simplify(graph) 
 V(graph)$color[1:max_center_nodes] = "green" #central node color
 V(graph)$color[max_center_nodes+1:length(V(graph))] = "pink"  #vertex colors
 graph = delete.vertices(graph, V(graph)[ degree(graph) == 0 ]) #delete empty vertices
-plot(graph, layout = layout.kamada.kawai, main = "Swiggy COG")
-  
+plot(graph, layout = layout.kamada.kawai, main = "Swiggy words graph")
+
+```
+
+```{r zomato cogs}
 dtm_plot <-  distill.cog(zomato_dtm)
 graph <- graph.adjacency(dtm_plot, mode = "undirected", weighted=T) #Create Network object
 graph <- simplify(graph) 
-V(graph)$color[1:4] <- "green" #central node color
-V(graph)$color[5:length(V(graph))] <- "pink"  #vertex colors
+V(graph)$color[1:max_center_nodes] = "green" #central node color
+V(graph)$color[max_center_nodes+1:length(V(graph))] = "pink"  #vertex colors
 graph = delete.vertices(graph, V(graph)[ degree(graph) == 0 ]) #delete empty vertices
-plot(graph, layout = layout.kamada.kawai, main = "Zomato COG")
-
+plot(graph, layout = layout.kamada.kawai, main = "Zomato words graph")
 ```
 
